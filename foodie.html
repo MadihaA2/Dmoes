@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Foodie • Responsive Recipe App</title>
+  <style>
+    :root{
+      --bg:#fbfbfd; --card:#ffffff; --muted:#6b7280; --accent:#ef4444; --primary:#111827;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial, sans-serif;background:var(--bg);color:var(--primary);}
+    header{background:linear-gradient(90deg,#ef4444,#f59e0b);color:white;padding:18px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:48px;height:48px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-weight:700}
+    .title{font-size:20px;font-weight:700}
+    .container{max-width:1100px;margin:20px auto;padding:0 16px}
+    .controls{display:flex;gap:12px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+    .search{flex:1;display:flex;gap:8px}
+    .search input{flex:1;padding:10px 12px;border-radius:10px;border:1px solid #e6e7eb;background:white}
+    .btn{padding:10px 14px;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;cursor:pointer}
+    .filters{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{padding:8px 10px;border-radius:999px;background:white;border:1px solid #e6e7eb;cursor:pointer}
+    .chip.active{background:linear-gradient(90deg,#f59e0b,#ef4444);color:white;border:none}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .card{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(16,24,40,0.08);display:flex;flex-direction:column;transition:transform .18s ease}
+    .card:hover{transform:translateY(-6px)}
+    .card img{width:100%;height:180px;object-fit:cover}
+    .card-body{padding:12px;display:flex;flex-direction:column;gap:8px}
+    .card h3{margin:0;font-size:18px}
+    .meta{font-size:13px;color:var(--muted)}
+    .card-footer{display:flex;justify-content:space-between;align-items:center;padding:12px;border-top:1px solid #f3f4f6}
+    .small{font-size:13px;color:var(--muted)}
+    @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:600px){.grid{grid-template-columns:1fr}.title{font-size:16px}header{padding:12px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">🍽</div>
+      <div><div class="title">Foodie</div><div style="font-size:12px;opacity:.9">Recipe App</div></div>
+    </div>
+    <button class="btn" id="randomBtn">Random Recipe</button>
+  </header>
+
+  <main class="container">
+    <div class="controls">
+      <div class="search">
+        <input id="q" placeholder="Search recipes..." />
+        <button class="btn" id="searchBtn">Search</button>
+      </div>
+    </div>
+    <section id="grid" class="grid"></section>
+    <div id="empty" style="padding:40px;text-align:center;display:none">No recipes found.</div>
+  </main>
+
+  <footer style="text-align:center;padding:18px;color:#6b7280">
+    Made with ❤️ — Save this file as <code>foodie.html</code> and open in your browser
+  </footer>
+
+  <script>
+    const RECIPES = [
+      {title:'Spaghetti Bolognese',img:'https://images.unsplash.com/photo-1603133872878-684f3bb6d0d2?auto=format&fit=crop&w=800&q=60',ingredients:['Spaghetti','Beef','Tomato','Onion','Garlic']},
+      {title:'Chicken Curry',img:'https://images.unsplash.com/photo-1627308595229-7830a5c91f9f?auto=format&fit=crop&w=800&q=60',ingredients:['Chicken','Curry','Onion','Tomato','Yogurt']},
+      {title:'Veggie Salad',img:'https://images.unsplash.com/photo-1565958011702-44e6f6f3b9bb?auto=format&fit=crop&w=800&q=60',ingredients:['Lettuce','Cucumber','Carrot','Tomato']},
+      {title:'Pancakes',img:'https://images.unsplash.com/photo-1587733315434-7f75c3f5af8b?auto=format&fit=crop&w=800&q=60',ingredients:['Flour','Milk','Eggs','Sugar']},
+      {title:'Cheeseburger',img:'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=800&q=60',ingredients:['Bun','Beef','Cheese','Lettuce']},
+      {title:'Fruit Smoothie',img:'https://images.unsplash.com/photo-1542444459-db5d0b9b2c2b?auto=format&fit=crop&w=800&q=60',ingredients:['Banana','Berries','Yogurt','Honey']}
+    ];
+    const grid=document.getElementById('grid');
+    const q=document.getElementById('q');
+    const empty=document.getElementById('empty');
+
+    function render(list){
+      grid.innerHTML='';
+      if(list.length===0){empty.style.display='block';return}else{empty.style.display='none'}
+      list.forEach(r=>{
+        const c=document.createElement('div');
+        c.className='card';
+        c.innerHTML=`<img src=\"${r.img}\" alt=\"${r.title}\"><div class=\"card-body\"><h3>${r.title}</h3><div class=\"meta\">${r.ingredients.join(', ')}</div></div>`;
+        grid.appendChild(c);
+      });
+    }
+    document.getElementById('searchBtn').onclick=()=>{const val=q.value.toLowerCase();render(RECIPES.filter(r=>r.title.toLowerCase().includes(val)||r.ingredients.join(' ').toLowerCase().includes(val)))};  
+    document.getElementById('randomBtn').onclick=()=>{const r=RECIPES[Math.floor(Math.random()*RECIPES.length)];render([r])};
+    render(RECIPES);
+  </script>
+</body>
+</html>

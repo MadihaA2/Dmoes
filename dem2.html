@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IlmHub — Islamic Learning Platform (Demo)</title>
+  <meta name="description" content="A single–file demo like Codingal but for Islamic courses — teachers teach, managers manage." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #0f172a;           /* slate-900 */
+      --card: #111827;         /* gray-900 */
+      --muted: #94a3b8;        /* slate-400 */
+      --text: #e5e7eb;         /* gray-200 */
+      --brand: #22c55e;        /* green-500 */
+      --brand-dark:#16a34a;    /* green-600 */
+      --accent:#38bdf8;        /* sky-400 */
+      --danger:#ef4444;        /* red-500 */
+      --warning:#f59e0b;       /* amber-500 */
+      --success:#10b981;       /* emerald-500 */
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0; background: radial-gradient(1200px 600px at 80% -10%, rgba(34,197,94,.15), transparent 60%),
+      radial-gradient(800px 400px at -10% 20%, rgba(56,189,248,.12), transparent 50%),
+      var(--bg);
+      color:var(--text); font-family:"Noto Nastaliq Urdu", serif;
+    }
+    *{box-sizing:border-box}
+    a{color:inherit; text-decoration:none}
+    .container{max-width:1200px; margin:0 auto; padding:0 16px}
+    .nav{position:sticky; top:0; z-index:50; backdrop-filter: blur(10px); background:rgba(15,23,42,.6); border-bottom:1px solid rgba(148,163,184,.15)}
+    .nav-inner{display:flex; align-items:center; justify-content:space-between; padding:12px 0}
+    .logo{display:flex; align-items:center; gap:10px}
+    .logo-badge{width:36px; height:36px; border-radius:12px; background:linear-gradient(135deg, var(--brand), var(--accent)); display:grid; place-items:center; box-shadow: var(--shadow)}
+    .logo-badge svg{filter: drop-shadow(0 2px 8px rgba(0,0,0,.6))}
+    .logo h1{font-size:22px; margin:0; font-weight:700}
+    .nav-actions{display:flex; gap:8px; align-items:center}
+    .btn{border:1px solid rgba(148,163,184,.2); padding:10px 14px; border-radius:14px; background:#0b1220; color:var(--text); cursor:pointer; transition:.2s ease; font-family:"Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif; font-weight:600}
+    .btn:hover{transform:translateY(-1px); border-color: rgba(148,163,184,.35)}
+    .btn.brand{background:linear-gradient(135deg, var(--brand), var(--accent)); border:none; color:#06220f}
+    .btn.brand:hover{filter:brightness(1.05)}
+    .hero{display:grid; grid-template-columns: 1.1fr .9fr; gap:28px; align-items:center; padding:56px 0}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.008)); border:1px solid rgba(148,163,184,.15); border-radius: var(--radius); box-shadow: var(--shadow)}
+    .hero-card{padding:28px}
+    .headline{font-size:40px; line-height:1.25; margin:0 0 8px 0; font-weight:700}
+    .eyebrow{color:var(--muted); font-family:"Inter"; letter-spacing:.5px; font-size:12px}
+    .lead{color:#d1d5db; font-size:18px; margin:10px 0 18px}
+    .grid{display:grid; gap:16px}
+    .grid-3{grid-template-columns:repeat(3,1fr)}
+    .grid-2{grid-template-columns:repeat(2,1fr)}
+    .section{padding:28px; margin:18px 0}
+    .section h2{margin:0 0 14px 0; font-size:28px}
+    .tag{font-family:"Inter"; font-size:11px; letter-spacing:.4px; color:#06220f; background:linear-gradient(135deg, var(--brand), var(--accent)); padding:6px 10px; border-radius:999px; display:inline-block}
+    .course{padding:16px}
+    .course h3{margin:4px 0 8px 0}
+    .chip{display:inline-flex; gap:8px; align-items:center; border:1px solid rgba(148,163,184,.25); padding:6px 10px; border-radius:999px; font-family:"Inter"; font-size:12px; color:#cbd5e1}
+    .teacher{display:flex; gap:14px; align-items:flex-start; padding:16px}
+    .avatar{width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg, #64748b, #0ea5e9); display:grid; place-items:center; font-family:"Inter"; font-weight:700}
+    .muted{color:var(--muted); font-family:"Inter"}
+    .footer{padding:40px 0; border-top:1px solid rgba(148,163,184,.15); color:var(--muted); font-family:"Inter"; text-align:center}
+    .pill{padding:10px 14px; border-radius:999px; background:rgba(56,189,248,.12); border:1px solid rgba(56,189,248,.25); font-family:"Inter";}
+
+    /* Dialog / modal */
+    .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:60}
+    .modal{width:min(680px, 92vw); background:#0b1220; border:1px solid rgba(148,163,184,.2); border-radius:16px; box-shadow: var(--shadow); display:none}
+    .modal header{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid rgba(148,163,184,.15)}
+    .modal .body{padding:16px}
+
+    .input, select{width:100%; background:#0a1220; color:var(--text); border:1px solid rgba(148,163,184,.22); border-radius:12px; padding:12px 12px; outline:none; font-family:"Inter"}
+    .input:focus, select:focus{border-color: var(--accent)}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+
+    .badge{font-family:"Inter"; font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid rgba(148,163,184,.25)}
+    .badge.success{background:rgba(16,185,129,.15); border-color:rgba(16,185,129,.35);}
+    .badge.warn{background:rgba(245,158,11,.15); border-color:rgba(245,158,11,.35);}
+    .badge.danger{background:rgba(239,68,68,.15); border-color:rgba(239,68,68,.35);}
+
+    /* Responsive */
+    @media (max-width: 900px){
+      .hero{grid-template-columns:1fr}
+      .grid-3{grid-template-columns: 1fr}
+      .grid-2{grid-template-columns: 1fr}
+      .headline{font-size:32px}
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <div class="logo">
+        <div class="logo-badge" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 7l9-4 9 4-9 4-9-4z" fill="rgba(0,0,0,.3)"/>
+            <path d="M3 12l9 4 9-4" stroke="#06220f" stroke-width="2"/>
+          </svg>
+        </div>
+        <h1>IlmHub — اسلامی لرننگ</h1>
+      </div>
+      <div class="nav-actions">
+        <button class="btn" id="btnLogin">لاگ اِن / سائن اَپ</button>
+        <button class="btn" id="btnManager">منیجر پینل</button>
+        <button class="btn brand" id="btnJoin">کلاس جوائن کریں</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="container hero">
+    <div class="card hero-card">
+      <div class="eyebrow">Learn • Teach • Inspire</div>
+      <h2 class="headline">Codingal جیسا پلیٹ فارم — مگر اسلامی تعلیم کیلئے ✨</h2>
+      <p class="lead">جہاں مستند اساتذہ قرآن، تجوید، ناظرہ، نورانی قاعدہ، سیرت اور عربی کی کلاسز پڑھاتے ہیں۔ والدین اور طلبہ آسانی سے کلاس بُک کر سکتے ہیں۔</p>
+      <div class="grid grid-3">
+        <div class="card section">
+          <span class="tag">طلبہ کیلئے</span>
+          <h3>لائیو کلاسز + ریکارڈنگ</h3>
+          <p class="muted">زوم/میٹ لنک شامل کریں، ریکارڈنگ بعد میں ڈاؤنلوڈ کریں۔</p>
+          <button class="btn" onclick="scrollToId('courses')">کورس دیکھیں</button>
+        </div>
+        <div class="card section">
+          <span class="tag">اساتذہ کیلئے</span>
+          <h3>Apply as Teacher</h3>
+          <p class="muted">پروفائل بنائیں، شیڈول سیٹ کریں، طلبہ سے کمائیں۔</p>
+          <button class="btn" onclick="openModal('teacherModal')">اپلائی کریں</button>
+        </div>
+        <div class="card section">
+          <span class="tag">والدین کیلئے</span>
+          <h3>ڈیش بورڈ</h3>
+          <p class="muted">بچوں کی پیش رفت دیکھیں، ادائیگی کریں، پیغامات بھیجیں۔</p>
+          <button class="btn" onclick="scrollToId('dashboard')">ڈیش بورڈ</button>
+        </div>
+      </div>
+    </div>
+    <div class="card hero-card">
+      <h3 style="margin:0 0 12px 0">آسان 3 قدمی طریقہ</h3>
+      <ol class="muted" style="line-height:1.9">
+        <li>کورس منتخب کریں → "Free Trial" بٹن دبائیں</li>
+        <li>وقت چنیں → کانٹیکٹ نمبر دیں</li>
+        <li>منظوری کے بعد کلاس لنک SMS/WhatsApp پر موصول ہوگا</li>
+      </ol>
+      <div style="height:12px"></div>
+      <div class="grid grid-2">
+        <div class="card section">
+          <div class="pill">🔔 اذان ریمائنڈر (ڈیمو)</div>
+          <p class="muted">نیچے وقت سیٹ کریں۔ طے شدہ وقت پر آواز بجے گی۔</p>
+          <div class="row">
+            <input class="input" type="time" id="adhanTime"/>
+            <button class="btn" onclick="setAdhanReminder()">سیٹ کریں</button>
+          </div>
+          <audio id="adhanAudio">
+            <source src="https://cdn.pixabay.com/download/audio/2021/09/20/audio_0f4ac74b9f.mp3?filename=prayer-call-azan-8582.mp3" type="audio/mpeg"/>
+          </audio>
+        </div>
+        <div class="card section">
+          <div class="pill">⬇️ ڈاؤنلوڈ ڈیمو</div>
+          <p class="muted">سبق کے نوٹس ایک کلک میں ڈاؤنلوڈ کریں۔</p>
+          <button class="btn" onclick="downloadNotes()">Lesson Notes ڈاؤنلوڈ کریں</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- COURSES -->
+  <section class="container card section" id="courses">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+      <h2>مشہور کورسز</h2>
+      <div class="chip"><span>⭐</span> 4.9 / 5 ریٹنگ</div>
+    </div>
+    <div class="grid grid-3" id="courseGrid"></div>
+  </section>
+
+  <!-- TEACHERS -->
+  <section class="container card section" id="teachers">
+    <h2>ہمارے اساتذہ</h2>
+    <div id="teacherList" class="grid grid-3"></div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="container card section" id="dashboard">
+    <h2>میرا ڈیش بورڈ</h2>
+    <div class="grid grid-2">
+      <div class="card section">
+        <h3>Enrolled Courses</h3>
+        <div id="enrolled"></div>
+      </div>
+      <div class="card section">
+        <h3>Billing & Payments (Demo)</h3>
+        <p class="muted">JazzCash / Easypaisa / Stripe — Coming Soon</p>
+        <div class="row">
+          <input class="input" id="coupon" placeholder="کوپن کوڈ درج کریں (مثلاً BISMILLAH10)" />
+          <button class="btn" onclick="applyCoupon()">Apply</button>
+        </div>
+        <div style="height:10px"></div>
+        <button class="btn brand" onclick="openModal('payModal')">ادائیگی کریں</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      © <span id="year"></span> IlmHub — Built as a demo single file. <span class="badge">HTTPS Ready</span>
+      <div style="height:8px"></div>
+      <a class="badge" href="#" onclick="shareOnWhatsApp(event)">WhatsApp پر شیئر کریں</a>
+    </div>
+  </footer>
+
+  <!-- MODALS -->
+  <div class="backdrop" id="backdrop" onclick="closeAllModals()"></div>
+
+  <!-- Login Modal -->
+  <div class="modal" id="authModal" role="dialog" aria-modal="true">
+    <header>
+      <strong>لاگ اِن / سائن اَپ</strong>
+      <button class="btn" onclick="closeAllModals()">✕</button>
+    </header>
+    <div class="body">
+      <div class="row">
+        <input class="input" id="authName" placeholder="نام" />
+        <input class="input" id="authPhone" placeholder="فون (WhatsApp)" />
+      </div>
+      <div style="height:10px"></div>
+      <input class="input" id="authEmail" placeholder="ای میل" />
+      <div style="height:10px"></div>
+      <input class="input" id="authPwd" placeholder="پاس ورڈ" type="password" />
+      <div style="height:12px"></div>
+      <button class="btn brand" onclick="signupOrLogin()">Continue</button>
+      <div style="height:8px"></div>
+      <p class="muted">ڈیمو کیلئے کوئی بھی معلومات درج کریں۔
+        <span class="badge">صرف LocalStorage</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- Teacher Apply Modal -->
+  <div class="modal" id="teacherModal" role="dialog" aria-modal="true">
+    <header>
+      <strong>استاد بنیں — Apply</strong>
+      <button class="btn" onclick="closeAllModals()">✕</button>
+    </header>
+    <div class="body">
+      <div class="row">
+        <input class="input" id="tName" placeholder="نام" />
+        <input class="input" id="tEmail" placeholder="ای میل" />
+      </div>
+      <div style="height:10px"></div>
+      <div class="row">
+        <select id="tSubject" class="input">
+          <option value="Quran Tajweed">Quran Tajweed</option>
+          <option value="Noorani Qaida">Noorani Qaida</option>
+          <option value="Hifz / Nazra">Hifz / Nazra</option>
+          <option value="Seerah">Seerah</option>
+          <option value="Arabic Basics">Arabic Basics</option>
+        </select>
+        <input class="input" id="tRate" type="number" placeholder="فی گھنٹہ فیس (PKR)" />
+      </div>
+      <div style="height:10px"></div>
+      <input class="input" id="tBio" placeholder="تعارف / سند" />
+      <div style="height:12px"></div>
+      <button class="btn brand" onclick="applyTeacher()">Submit</button>
+      <p class="muted">درخواست منیجر پینل میں نظر آئے گی۔</p>
+    </div>
+  </div>
+
+  <!-- Book Trial Modal -->
+  <div class="modal" id="trialModal" role="dialog" aria-modal="true">
+    <header>
+      <strong>Free Trial بُک کریں</strong>
+      <button class="btn" onclick="closeAllModals()">✕</button>
+    </header>
+    <div class="body">
+      <div class="row">
+        <input class="input" id="trialName" placeholder="طالب علم کا نام" />
+        <input class="input" id="trialPhone" placeholder="WhatsApp نمبر" />
+      </div>
+      <div style="height:10px"></div>
+      <div class="row">
+        <input class="input" id="trialDate" type="date" />
+        <input class="input" id="trialTime" type="time" />
+      </div>
+      <div style="height:12px"></div>
+      <button class="btn brand" onclick="bookTrial()">بُک کریں</button>
+      <p class="muted">منظوری کے بعد کلاس لنک WhatsApp پر ملے گا۔</p>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal" id="payModal" role="dialog" aria-modal="true">
+    <header>
+      <strong>ادائیگی (ڈیمو)</strong>
+      <button class="btn" onclick="closeAllModals()">✕</button>
+    </header>
+    <div class="body">
+      <p class="muted">ادائیگی کے طریقے منتخب کریں:</p>
+      <div class="row">
+        <label class="chip"><input type="radio" name="pay" checked> JazzCash</label>
+        <label class="chip"><input type="radio" name="pay"> Easypaisa</label>
+      </div>
+      <div style="height:10px"></div>
+      <div class="row">
+        <input class="input" placeholder="رقم (PKR)" id="payAmount" type="number"/>
+        <input class="input" placeholder="ریفرنس نو." id="payRef"/>
+      </div>
+      <div style="height:12px"></div>
+      <button class="btn brand" onclick="markPaid()">Mark as Paid (Demo)</button>
+      <p class="muted">یہ صرف ڈیمو ہے — کوئی حقیقی ادائیگی نہیں ہو گی۔</p>
+    </div>
+  </div>
+
+  <!-- Manager Panel Modal -->
+  <div class="modal" id="managerModal" role="dialog" aria-modal="true">
+    <header>
+      <strong>منیجر پینل</strong>
+      <button class="btn" onclick="closeAllModals()">✕</button>
+    </header>
+    <div class="body" id="managerBody">
+      <div id="mgrLogin">
+        <p class="muted">لاگ اِن: admin@ilmhub | پاس ورڈ: <span class="badge">manager123</span></p>
+        <div class="row">
+          <input class="input" id="mgrEmail" placeholder="ای میل" />
+          <input class="input" id="mgrPwd" type="password" placeholder="پاس ورڈ" />
+        </div>
+        <div style="height:12px"></div>
+        <button class="btn brand" onclick="managerLogin()">Enter Panel</button>
+      </div>
+      <div id="mgrArea" style="display:none">
+        <div class="grid grid-2">
+          <div class="card section">
+            <h3>Teacher Applications</h3>
+            <div id="apps"></div>
+          </div>
+          <div class="card section">
+            <h3>Courses & Approvals</h3>
+            <div id="mgrCourses"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ======= Utilities & State =======
+    const $ = (q) => document.querySelector(q);
+    const $$ = (q) => document.querySelectorAll(q);
+    const db = {
+      users: JSON.parse(localStorage.getItem('users')||'[]'),
+      currentUser: JSON.parse(localStorage.getItem('currentUser')||'null'),
+      courses: JSON.parse(localStorage.getItem('courses')||'null') || defaultCourses(),
+      teachers: JSON.parse(localStorage.getItem('teachers')||'null') || defaultTeachers(),
+      apps: JSON.parse(localStorage.getItem('apps')||'[]'),
+      enrollments: JSON.parse(localStorage.getItem('enrollments')||'[]'),
+      payments: JSON.parse(localStorage.getItem('payments')||'[]'),
+    };
+    persist();
+
+    function persist(){
+      localStorage.setItem('users', JSON.stringify(db.users));
+      localStorage.setItem('currentUser', JSON.stringify(db.currentUser));
+      localStorage.setItem('courses', JSON.stringify(db.courses));
+      localStorage.setItem('teachers', JSON.stringify(db.teachers));
+      localStorage.setItem('apps', JSON.stringify(db.apps));
+      localStorage.setItem('enrollments', JSON.stringify(db.enrollments));
+      localStorage.setItem('payments', JSON.stringify(db.payments));
+    }
+
+    function defaultCourses(){
+      return [
+        {id:'c1', title:'نورانی قاعدہ (بنیادی)', level:'Beginner', price:2500, tag:'Kids 6+', desc:'حروف کی پہچان، مخارج اور جوڑ کی مشقیں۔', duration:'4 ہفتے', slots:['17:00','19:00'], teacher:'t1'},
+        {id:'c2', title:'قرآن ناظرہ + تجوید', level:'Beginner/Inter', price:3500, tag:'Daily 30m', desc:'تجوید کے قواعد، صحیح مخارج، روزانہ تلاوت۔', duration:'8 ہفتے', slots:['18:00','20:30'], teacher:'t2'},
+        {id:'c3', title:'حفظِ قرآن (Part-time)', level:'Advanced', price:6000, tag:'Hifz Track', desc:'منظم حفظ، دور، تسلسل اور جائزہ۔', duration:'12 ہفتے', slots:['06:30','21:00'], teacher:'t3'},
+        {id:'c4', title:'سیرتُ النبی ﷺ', level:'All', price:3000, tag:'Story Based', desc:'سیرت کے سنہرے واقعات، اخلاق، سبق آموز کہانیاں۔', duration:'6 ہفتے', slots:['19:30','21:30'], teacher:'t4'},
+        {id:'c5', title:'عربی بنیادیات', level:'Beginner', price:3200, tag:'Arabic 101', desc:'حروف، بنیادی صرف و نحو اور روزمرہ جملے۔', duration:'6 ہفتے', slots:['17:30','20:00'], teacher:'t2'},
+        {id:'c6', title:'قرآن فہم (ترجمہ+تدبر)', level:'Inter', price:3800, tag:'Tafseer Lite', desc:'منتخب سورتوں کا ترجمہ اور تدبر۔', duration:'8 ہفتے', slots:['18:30','22:00'], teacher:'t1'},
+      ];
+    }
+
+    function defaultTeachers(){
+      return [
+        {id:'t1', name:'قاری زید', subject:'Noorani Qaida / Tafseer', rate:1500, bio:'جامعہ سے حفظ و تجوید، 7 سالہ تجربہ۔'},
+        {id:'t2', name:'استادہ مریم', subject:'Tajweed / Arabic', rate:1800, bio:'MA Arabic، آن لائن ٹیچنگ 5 سال۔'},
+        {id:'t3', name:'قاری سلمان', subject:'Hifz / Nazra', rate:2000, bio:'مسجد کے امام، حفظ کے ماہر۔'},
+        {id:'t4', name:'استاد حمزہ', subject:'Seerah / History', rate:1400, bio:'Islamic Studies (MPhil), ریسرچ اسکالر۔'},
+      ];
+    }
+
+    // ======= UI Builders =======
+    function renderCourses(){
+      const g = $('#courseGrid'); g.innerHTML='';
+      db.courses.forEach(c=>{
+        const t = db.teachers.find(t=>t.id===c.teacher);
+        const el = document.createElement('div');
+        el.className='card course';
+        el.innerHTML = `
+          <div class="chip">${c.tag}</div>
+          <h3>${c.title}</h3>
+          <p class="muted">${c.desc}</p>
+          <div class="muted">استاد: <b>${t?.name||'-'}</b> • مدت: ${c.duration} • سطح: ${c.level}</div>
+          <div style="height:8px"></div>
+          <div class="row">
+            <select class="input" id="slot-${c.id}">
+              ${c.slots.map(s=>`<option value="${s}">${s}</option>`).join('')}
+            </select>
+            <button class="btn brand" onclick="enroll('${c.id}')">Enroll (PKR ${c.price})</button>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
+            <span class="badge">Zoom/Meet Supported</span>
+            <span class="badge">Recording</span>
+            <span class="badge">Parent Access</span>
+          </div>
+        `;
+        g.appendChild(el);
+      });
+    }
+
+    function renderTeachers(){
+      const g = $('#teacherList'); g.innerHTML='';
+      db.teachers.forEach(t=>{
+        const el = document.createElement('div');
+        el.className='card teacher';
+        el.innerHTML = `
+          <div class="avatar">${t.name.slice(0,2)}</div>
+          <div>
+            <h3 style="margin:0">${t.name}</h3>
+            <div class="muted">${t.subject} • فی گھنٹہ: PKR ${t.rate}</div>
+            <p class="muted">${t.bio}</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <button class="btn" onclick="openModal('trialModal')">Free Trial</button>
+              <button class="btn brand" onclick="enrollDirect('${t.id}')">Enroll with ${t.name.split(' ')[0]}</button>
+            </div>
+          </div>
+        `;
+        g.appendChild(el);
+      });
+    }
+
+    function renderEnrolled(){
+      const wrap = $('#enrolled');
+      const my = db.currentUser?.email;
+      const items = db.enrollments.filter(e=> e.email===my);
+      if(!db.currentUser){ wrap.innerHTML = '<p class="muted">براہِ کرم پہلے لاگ اِن کریں۔</p>'; return; }
+      if(items.length===0){ wrap.innerHTML = '<p class="muted">ابھی کوئی کورس شامل نہیں — اوپر سے Enroll کریں۔</p>'; return; }
+      wrap.innerHTML = '';
+      items.forEach(e=>{
+        const c = db.courses.find(c=>c.id===e.courseId);
+        const el = document.createElement('div');
+        el.className='card section';
+        el.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap">
+            <div>
+              <h3 style="margin:0">${c?.title||'Course'}</h3>
+              <div class="muted">Slot: ${e.slot} • Status: <span class="badge success">Active</span></div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <button class="btn" onclick="openMeeting('${c?.title||''}')">Join Class</button>
+              <button class="btn" onclick="downloadNotes()">Notes</button>
+            </div>
+          </div>
+        `;
+        wrap.appendChild(el);
+      });
+    }
+
+    function renderManager(){
+      // Applications
+      const apps = db.apps.map((a,i)=>`
+        <div class="card section" style="margin-bottom:8px">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap">
+            <div>
+              <b>${a.name}</b> <span class="muted">(${a.email})</span>
+              <div class="muted">${a.subject} • Expected: PKR ${a.rate}/hr</div>
+              <div class="muted">Bio: ${a.bio}</div>
+            </div>
+            <div style="display:flex; gap:8px">
+              <button class="btn" onclick="approveTeacher(${i})">Approve</button>
+              <button class="btn" onclick="rejectTeacher(${i})">Reject</button>
+            </div>
+          </div>
+        </div>`).join('');
+      $('#apps').innerHTML = apps || '<p class="muted">No pending applications.</p>';
+
+      // Courses
+      const list = db.courses.map(c=>{
+        const t = db.teachers.find(t=>t.id===c.teacher);
+        return `
+          <div class="card section" style="margin-bottom:8px">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap">
+              <div>
+                <b>${c.title}</b> <span class="badge">${c.level}</span>
+                <div class="muted">Teacher: ${t?.name||'-'} • Price: ${c.price} • Slots: ${c.slots.join(', ')}</div>
+              </div>
+              <div style="display:flex; gap:8px">
+                <button class="btn" onclick="addSlot('${c.id}')">+ Slot</button>
+                <button class="btn" onclick="discount('${c.id}')">Discount</button>
+              </div>
+            </div>
+          </div>`
+      }).join('');
+      $('#mgrCourses').innerHTML = list;
+    }
+
+    // ======= Actions =======
+    function scrollToId(id){ document.getElementById(id)?.scrollIntoView({behavior:'smooth'}); }
+
+    function openModal(id){
+      $('#backdrop').style.display='flex';
+      $$('#backdrop ~ .modal').forEach(m=> m.style.display = m.id===id ? 'block' : 'none');
+    }
+    function closeAllModals(){
+      $('#backdrop').style.display='none';
+      $$('#backdrop ~ .modal').forEach(m=> m.style.display='none');
+    }
+
+    // Auth
+    $('#btnLogin').addEventListener('click', ()=> openModal('authModal'));
+    $('#btnJoin').addEventListener('click', ()=> scrollToId('courses'));
+
+    function signupOrLogin(){
+      const name=$('#authName').value.trim();
+      const email=$('#authEmail').value.trim();
+      const phone=$('#authPhone').value.trim();
+      const pwd=$('#authPwd').value.trim();
+      if(!email||!pwd){ alert('ای میل اور پاس ورڈ درکار ہیں'); return; }
+      let u = db.users.find(u=>u.email===email);
+      if(!u){ u={name,email,phone,pwd}; db.users.push(u); }
+      db.currentUser = u; persist(); closeAllModals(); renderEnrolled(); alert('خوش آمدید!');
+    }
+
+    // Enroll
+    function enroll(courseId){
+      if(!db.currentUser){ openModal('authModal'); return; }
+      const slot = document.getElementById('slot-'+courseId).value;
+      db.enrollments.push({email: db.currentUser.email, courseId, slot});
+      persist(); renderEnrolled(); alert('Enroll ہو گیا — ڈیش بورڈ دیکھیں');
+    }
+
+    function enrollDirect(teacherId){
+      const c = db.courses.find(c=>c.teacher===teacherId) || db.courses[0];
+      enroll(c.id);
+    }
+
+    // Trial
+    function bookTrial(){
+      const n=$('#trialName').value.trim(); const p=$('#trialPhone').value.trim(); const d=$('#trialDate').value; const t=$('#trialTime').value;
+      if(!n||!p||!d||!t) return alert('برائے مہربانی تمام خانے پُر کریں');
+      closeAllModals(); alert('Trial request submitted! Manager approval pending.');
+    }
+
+    // Notes download
+    function downloadNotes(){
+      const content = `Bismillah\n\nLesson Notes (Demo)\n— Arabic Alphabet\n— Makharij basics\n— Surah Al-Fatiha tajweed points`;
+      const blob = new Blob([content], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='lesson-notes.txt'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    // Payment demo
+    function applyCoupon(){
+      const c = $('#coupon').value.trim().toUpperCase();
+      if(c==='BISMILLAH10'){ alert('10% ڈسکاؤنٹ منظور! (ڈیمو)'); }
+      else if(c){ alert('غلط کوپن'); }
+    }
+    function markPaid(){
+      const amt = +($('#payAmount').value||0); const ref = $('#payRef').value.trim();
+      if(!amt||!ref) return alert('رقم اور ریفرنس ضروری ہیں');
+      db.payments.push({email: db.currentUser?.email||'guest', amt, ref, at: Date.now()}); persist(); closeAllModals(); alert('Payment marked (demo).');
+    }
+
+    // Manager Panel
+    $('#btnManager').addEventListener('click', ()=> openModal('managerModal'));
+
+    function managerLogin(){
+      const e=$('#mgrEmail').value.trim(), p=$('#mgrPwd').value.trim();
+      if(e==='admin@ilmhub' && p==='manager123'){
+        $('#mgrLogin').style.display='none'; $('#mgrArea').style.display='block'; renderManager();
+      } else alert('غلط کریڈنشلز');
+    }
+
+    function applyTeacher(){
+      const name=$('#tName').value.trim(); const email=$('#tEmail').value.trim();
+      const subject=$('#tSubject').value; const rate=+($('#tRate').value||0); const bio=$('#tBio').value.trim();
+      if(!name||!email||!subject||!rate||!bio) return alert('تمام معلومات درکار ہیں');
+      db.apps.push({name,email,subject,rate,bio}); persist(); closeAllModals(); alert('درخواست جمع ہو گئی');
+    }
+
+    function approveTeacher(i){
+      const app = db.apps[i]; if(!app) return;
+      const id = 't' + Math.floor(Math.random()*10000);
+      db.teachers.push({id,name:app.name,subject:app.subject,rate:app.rate,bio:app.bio});
+      db.apps.splice(i,1); persist(); renderManager(); renderTeachers();
+    }
+    function rejectTeacher(i){ db.apps.splice(i,1); persist(); renderManager(); }
+
+    function addSlot(courseId){
+      const c = db.courses.find(c=>c.id===courseId); if(!c) return; const s=prompt('نیا Slot (HH:MM)'); if(!s) return; c.slots.push(s); persist(); renderManager(); renderCourses();
+    }
+    function discount(courseId){
+      const c = db.courses.find(c=>c.id===courseId); if(!c) return; const d=+prompt('Discount %? ex: 10'); if(!d) return; c.price = Math.max(0, Math.round(c.price*(1-d/100))); persist(); renderManager(); renderCourses();
+    }
+
+    function openMeeting(title){
+      const url = 'https://meet.google.com/lookup/demo-class';
+      alert('Demo meeting for '+title+' will open in new tab.');
+      window.open(url,'_blank');
+    }
+
+    // Adhan reminder (simple demo timer)
+    let adhanTimer = null;
+    function setAdhanReminder(){
+      const val = $('#adhanTime').value; if(!val) return alert('وقت منتخب کریں');
+      if(adhanTimer) clearInterval(adhanTimer);
+      const [hh,mm] = val.split(':').map(Number);
+      adhanTimer = setInterval(()=>{
+        const now = new Date();
+        if(now.getHours()===hh && now.getMinutes()===mm && now.getSeconds()<3){
+          $('#adhanAudio').play();
+          clearInterval(adhanTimer);
+          alert('اذان کا وقت ہو گیا');
+        }
+      }, 1000);
+      alert('اذان ریمائنڈر سیٹ ہو گیا');
+    }
+
+    function shareOnWhatsApp(e){
+      e.preventDefault();
+      const text = encodeURIComponent('IlmHub — اسلامی لرننگ پلیٹ فارم (ڈیمو) \n\nمجھے یہ سائیٹ پسند آئی!');
+      const url = encodeURIComponent(location.href);
+      window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+    }
+
+    // Init
+    renderCourses();
+    renderTeachers();
+    renderEnrolled();
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

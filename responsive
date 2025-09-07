@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Foodie • Responsive Recipe App</title>
+  <style>
+    :root{
+      --bg:#fbfbfd; --card:#ffffff; --muted:#6b7280; --accent:#ef4444; --primary:#111827;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter, system-ui, Arial, sans-serif;background:var(--bg);color:var(--primary);}
+
+    header{background:linear-gradient(90deg,#ef4444,#f59e0b);color:white;padding:18px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:48px;height:48px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-weight:700}
+    .title{font-size:20px;font-weight:700}
+
+    .container{max-width:1100px;margin:20px auto;padding:0 16px}
+    .controls{display:flex;gap:12px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+    .search{flex:1;display:flex;gap:8px}
+    .search input{flex:1;padding:10px 12px;border-radius:10px;border:1px solid #e6e7eb;background:white}
+    .btn{padding:10px 14px;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:600;cursor:pointer}
+    .filters{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{padding:8px 10px;border-radius:999px;background:white;border:1px solid #e6e7eb;cursor:pointer}
+    .chip.active{background:linear-gradient(90deg,#f59e0b,#ef4444);color:white;border:none}
+
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .card{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(16,24,40,0.08);display:flex;flex-direction:column;transition:transform .18s ease}
+    .card:hover{transform:translateY(-6px)}
+    .card img{width:100%;height:180px;object-fit:cover}
+    .card-body{padding:12px;display:flex;flex-direction:column;gap:8px}
+    .card h3{margin:0;font-size:18px}
+    .meta{font-size:13px;color:var(--muted)}
+    .card-footer{display:flex;justify-content:space-between;align-items:center;padding:12px;border-top:1px solid #f3f4f6}
+    .small{font-size:13px;color:var(--muted)}
+
+    /* Modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.5);padding:20px}
+    .modal.open{display:flex}
+    .modal-card{width:900px;max-width:98%;background:white;border-radius:12px;overflow:hidden;display:grid;grid-template-columns:1fr 320px}
+    .modal-body{padding:18px}
+    .modal-aside{padding:18px;background:#f8fafc}
+    .ingredients{margin-top:12px}
+    .ingredient{padding:6px 8px;border-radius:8px;background:#fff;margin:6px 0;border:1px solid #eef2f7}
+
+    /* responsive */
+    @media(max-width:900px){
+      .grid{grid-template-columns:repeat(2,1fr)}
+      .modal-card{grid-template-columns:1fr}
+    }
+    @media(max-width:600px){
+      .grid{grid-template-columns:1fr}
+      .search input{padding:9px}
+      .title{font-size:16px}
+      header{padding:12px}
+    }
+
+    /* utilities */
+    .center{display:flex;align-items:center;justify-content:center}
+    .favorite{background:transparent;border:1px dashed #e5e7eb;padding:6px 10px;border-radius:8px;cursor:pointer}
+    .favorite.active{background:linear-gradient(90deg,#f59e0b,#ef4444);color:white;border:none}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">🍽</div>
+      <div>
+        <div class="title">Foodie</div>
+        <div style="font-size:12px;opacity:.9">Responsive Recipe App</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" id="viewFavs">Favorites</button>
+      <button class="btn" id="downloadAll">Download All</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="controls">
+      <div class="search">
+        <input id="q" placeholder="Search recipes, ingredients..." />
+        <button class="btn" id="searchBtn">Search</button>
+      </div>
+
+      <div class="filters" id="filterRow">
+        <!-- chips injected -->
+      </div>
+
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="chip" id="randomBtn">Random</button>
+        <button class="chip" id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <section id="grid" class="grid"></section>
+
+    <div id="empty" style="padding:40px;text-align:center;display:none">No recipes found. Try a different search.</div>
+  </main>
+
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-body">
+        <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+          <h2 id="mTitle">Title</h2>
+          <div>
+            <button class="favorite" id="favBtn">☆ Favorite</button>
+            <button class="btn" id="downloadBtn">Download Recipe</button>
+          </div>
+        </div>
+        <img id="mImg" src="" style="width:100%;height:260px;object-fit:cover;border-radius:10px;margin-top:12px;" />
+        <h4 style="margin-top:12px">Ingredients</h4>
+        <div id="mIngredients" class="ingredients"></div>
+
+        <h4 style="margin-top:12px">Directions</h4>
+        <div id="mDirections" style="line-height:1.6;color:#374151"></div>
+      </div>
+      <aside class="modal-aside">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="small">Prep time: <strong id="mPrep">10 mins</strong></div>
+          <div class="small">Cook time: <strong id="mCook">20 mins</strong></div>
+          <div class="small">Serves: <strong id="mServe">2</strong></div>
+          <div style="margin-top:12px">
+            <h4>Tags</h4>
+            <div id="mTags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+          </div>
+          <div style="margin-top:12px"><button class="btn" id="closeModal">Close</button></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <footer style="text-align:center;padding:18px;color:var(--muted)">Made with ❤️ — Open this file in your browser (save as <code>foodie.html</code>)</footer>
+
+  <script>
+    // ====== Data ======
+    const RECIPES = [
+      {id:1,title:'Spaghetti Bolognese',img:'https://images.unsplash.com/photo-1603133872878-684f3bb6d0d2?auto=format&fit=crop&w=1200&q=60',ingredients:['Spaghetti','Ground beef','Tomato sauce','Onion','Garlic','Olive oil'],directions:'Cook spaghetti according to package. In pan, sauté onion & garlic, add beef and brown. Add tomato sauce and simmer. Combine with pasta.',prep:10,cook:25,serves:3,tags:['italian','meat']},
+      {id:2,title:'Chicken Curry',img:'https://images.unsplash.com/photo-1627308595229-7830a5c91f9f?auto=format&fit=crop&w=1200&q=60',ingredients:['Chicken','Curry powder','Onion','Tomato','Yogurt','Spices'],directions:'Sauté onions, add spices and chicken. Add tomatoes and yogurt, simmer until cooked.',prep:15,cook:30,serves:4,tags:['asian','spicy','meat']},
+      {id:3,title:'Veggie Salad',img:'https://images.unsplash.com/photo-1565958011702-44e6f6f3b9bb?auto=format&fit=crop&w=1200&q=60',ingredients:['Lettuce','Tomato','Cucumber','Carrot','Olive oil','Lemon'],directions:'Chop veggies, toss with olive oil and lemon. Serve chilled.',prep:10,cook:0,serves:2,tags:['vegetarian','healthy']},
+      {id:4,title:'Pancakes',img:'https://images.unsplash.com/photo-1587733315434-7f75c3f5af8b?auto=format&fit=crop&w=1200&q=60',ingredients:['Flour','Milk','Eggs','Sugar','Butter'],directions:'Mix ingredients to make batter. Pour on a hot pan and flip when bubbles appear. Serve with syrup.',prep:8,cook:12,serves:2,tags:['breakfast','sweet']},
+      {id:5,title:'Cheeseburger',img:'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1200&q=60',ingredients:['Bun','Beef patty','Cheese','Lettuce','Tomato'],directions:'Grill patty, assemble burger with toppings.',prep:10,cook:10,serves:1,tags:['fastfood','meat']},
+      {id:6,title:'Fruit Smoothie',img:'https://images.unsplash.com/photo-1542444459-db5d0b9b2c2b?auto=format&fit=crop&w=1200&q=60',ingredients:['Banana','Berries','Yogurt','Honey'],directions:'Blend all ingredients until smooth. Serve chilled.',prep:5,cook:0,serves:1,tags:['drink','healthy','vegetarian']}
+    ];
+
+    // ====== State ======
+    let filtered = [...RECIPES];
+    const grid = document.getElementById('grid');
+    const q = document.getElementById('q');
+    const filterRow = document.getElementById('filterRow');
+    const modal = document.getElementById('modal');
+    const mTitle = document.getElementById('mTitle');
+    const mImg = document.getElementById('mImg');
+    const mIngredients = document.getElementById('mIngredients');
+    const mDirections = document.getElementById('mDirections');
+    const mPrep = document.getElementById('mPrep');
+    const mCook = document.getElementById('mCook');
+    const mServe = document.getElementById('mServe');
+    const mTags = document.getElementById('mTags');
+    const favBtn = document.getElementById('favBtn');
+    const empty = document.getElementById('empty');
+
+    // favorites in localStorage
+    function getFavs(){
+      try{return JSON.parse(localStorage.getItem('foodie_favs')||'[]')}
+      catch(e){return []}
+    }
+    function setFavs(arr){localStorage.setItem('foodie_favs',JSON.stringify(arr))}
+
+    // build tag chips
+    const allTags = [...new Set(RECIPES.flatMap(r=>r.tags))];
+    function renderChips(){
+      filterRow.innerHTML='';
+      allTags.forEach(t=>{
+        const btn=document.createElement('button');btn.className='chip';btn.textContent=t;btn.onclick=()=>{
+          document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+          btn.classList.add('active');
+          applyFilters({tag:t});
+        };
+        filterRow.appendChild(btn);
+      });
+    }
+
+    // render list
+    function renderList(list){
+      grid.innerHTML='';
+      if(list.length===0){empty.style.display='block';grid.style.display='none';return;} else {empty.style.display='none';grid.style.display='grid'}
+      list.forEach(r=>{
+        const card=document.createElement('div');card.className='card';
+        card.innerHTML=`<img src="${r.img}" alt="${r.title}"><div class="card-body"><h3>${r.title}</h3><div class="meta">${r.tags.join(' • ')} • ${r.serves} servings</div></div><div class="card-footer"><div class="small">${r.ingredients.slice(0,3).join(', ')}...</div><div><button class="chip" data-id="${r.id}">View</button></div></div>`;
+        // view button
+        card.querySelector('button.chip').onclick=()=>openModal(r.id);
+        grid.appendChild(card);
+      });
+    }
+
+    function applyFilters(opts={}){
+      const term = (opts.q ?? q.value).toLowerCase();
+      const tag = opts.tag || null;
+      filtered = RECIPES.filter(r=>{
+        const matchesTerm = !term || r.title.toLowerCase().includes(term) || r.ingredients.join(' ').toLowerCase().includes(term);
+        const matchesTag = !tag || r.tags.includes(tag);
+        return matchesTerm && matchesTag;
+      });
+      renderList(filtered);
+    }
+
+    // modal open
+    function openModal(id){
+      const r = RECIPES.find(x=>x.id===id);
+      if(!r) return;
+      mTitle.textContent=r.title; mImg.src=r.img; mIngredients.innerHTML='';
+      r.ingredients.forEach(i=>{const d=document.createElement('div');d.className='ingredient';d.textContent=i;mIngredients.appendChild(d)});
+      mDirections.textContent=r.directions; mPrep.textContent=r.prep+' mins'; mCook.textContent=r.cook+' mins'; mServe.textContent=r.serves; mTags.innerHTML='';
+      r.tags.forEach(t=>{const s=document.createElement('span');s.className='chip';s.textContent=t; mTags.appendChild(s)});
+      // favorite state
+      const favs = getFavs(); favBtn.classList.toggle('active', favs.includes(r.id)); favBtn.textContent = favs.includes(r.id)?'★ Favorited':'☆ Favorite';
+      favBtn.onclick = ()=>{
+        let f = getFavs();
+        if(f.includes(r.id)){ f = f.filter(x=>x!==r.id); } else { f.push(r.id); }
+        setFavs(f); favBtn.classList.toggle('active'); favBtn.textContent = f.includes(r.id)?'★ Favorited':'☆ Favorite';
+      };
+
+      // download recipe
+      document.getElementById('downloadBtn').onclick = ()=>downloadRecipe(r);
+
+      modal.classList.add('open'); modal.setAttribute('aria-hidden','false');
+    }
+
+    document.getElementById('closeModal').onclick = ()=>{modal.classList.remove('open'); modal.setAttribute('aria-hidden','true')};
+    modal.addEventListener('click', (e)=>{ if(e.target===modal){ modal.classList.remove('open') } });
+
+    // random
+    document.getElementById('randomBtn').onclick = ()=>{
+      const r = RECIPES[Math.floor(Math.random()*RECIPES.length)]; applyFilters({q:r.title}); renderList([r]);
+    };
+    document.getElementById('resetBtn').onclick = ()=>{ q.value=''; document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active')); renderList(RECIPES); }
+    document.getElementById('searchBtn').onclick = ()=>applyFilters({q:q.value});
+    q.addEventListener('keyup',(e)=>{ if(e.key==='Enter') applyFilters({q:q.value}) });
+
+    // favorites view
+    document.getElementById('viewFavs').onclick = ()=>{
+      const f = getFavs(); if(f.length===0){ alert('You have no favorites yet.'); return;} const list = RECIPES.filter(r=>f.includes(r.id)); renderList(list);
+    }
+
+    // download recipe as text
+    function downloadRecipe(r){
+      const text = `Recipe: ${r.title}\n\nIngredients:\n- ${r.ingredients.join('\n- ')}\n\nDirections:\n${r.directions}\n\nPrep: ${r.prep} mins\nCook: ${r.cook} mins\nServes: ${r.serves}`;
+      const blob = new Blob([text], {type:'text/plain'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${r.title.replace(/\s+/g,'_')}.txt`; a.click();
+    }
+
+    // download all recipes as JSON
+    document.getElementById('downloadAll').onclick = ()=>{
+      const blob = new Blob([JSON.stringify(RECIPES, null, 2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `recipes_all.json`; a.click();
+    }
+
+    // initial render
+    renderChips(); renderList(RECIPES);
+
+    // small usability: touch-friendly spacing for mobile
+    (function(){ if('ontouchstart' in window) document.body.style.fontSize = '15px'; })();
+  </script>
+</body>
+</html>
