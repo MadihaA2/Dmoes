@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Learnly — English Practice (Duolingo-like Demo)</title>
+  <style>
+    :root{
+      --bg:#f3f6fb; --card:#ffffff; --accent:#10b981; --accent2:#06b6d4; --muted:#6b7280; --danger:#ef4444;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter, Arial, sans-serif;background:var(--bg);color:#0f172a}
+    header{background:linear-gradient(90deg,var(--accent),var(--accent2));color:white;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-weight:800}
+    .title{font-weight:700;font-size:18px}
+    .top-stats{display:flex;gap:12px;align-items:center}
+    .stat{background:rgba(255,255,255,0.08);padding:8px 12px;border-radius:10px;font-size:14px}
+    .container{max-width:1100px;margin:20px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:320px 1fr;gap:18px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+    .lesson{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;border:1px solid #edf2f7;cursor:pointer}
+    .lesson:hover{background:#f8fafc}
+    .small{font-size:13px;color:var(--muted)}
+    .progress-bar{height:10px;background:#e6eef6;border-radius:999px;overflow:hidden}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%}
+    /* lesson area */
+    .exercise{display:flex;flex-direction:column;gap:12px}
+    .choices{display:flex;flex-direction:column;gap:8px}
+    .choice{padding:12px;border-radius:10px;border:1px solid #e6eef6;background:#fff;cursor:pointer}
+    .choice.correct{border-color:green;background:#ecfdf5}
+    .choice.wrong{border-color:var(--danger);background:#fff1f2}
+    .controls{display:flex;gap:8px;align-items:center}
+    .btn{padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:white;cursor:pointer;font-weight:600}
+    .ghost{background:transparent;border:1px solid #e6eef6;color:var(--muted)}
+    .center{text-align:center}
+    .footer-small{font-size:13px;color:var(--muted);margin-top:10px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr;}.top-stats{display:none}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">L</div>
+      <div>
+        <div class="title">Learnly — English Practice</div>
+        <div class="small">Mini Duolingo-like demo</div>
+      </div>
+    </div>
+    <div class="top-stats" aria-hidden="true">
+      <div class="stat" id="coins">Coins: 0</div>
+      <div class="stat" id="streak">Streak: 0 🔥</div>
+      <div class="stat" id="level">Level: Beginner</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <!-- Sidebar: lessons -->
+      <aside>
+        <div class="card">
+          <h3>Lessons</h3>
+          <div class="small">Start from basics. Each lesson has 5 exercises.</div>
+          <div style="margin-top:12px" id="lessonsList"></div>
+
+          <div style="margin-top:12px">
+            <h4 class="small">Progress</h4>
+            <div class="progress-bar" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="footer-small" id="progressText">0 / 0 completed</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h4>Practice Tools</h4>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" id="reviewBtn">Review Mistakes</button>
+            <button class="btn ghost" id="resetBtn">Reset Progress</button>
+          </div>
+          <div class="footer-small">Progress saved in your browser (localStorage).</div>
+        </div>
+      </aside>
+
+      <!-- Main: exercises -->
+      <section>
+        <div class="card" id="lessonCard">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h2 id="lessonTitle">Welcome</h2>
+              <div class="small" id="lessonSubtitle">Choose a lesson to begin</div>
+            </div>
+            <div class="small">Score: <strong id="score">0</strong></div>
+          </div>
+
+          <hr style="margin:12px 0;border:none;border-top:1px solid #eef2f7" />
+
+          <div id="exerciseArea" class="exercise center">
+            <p class="small">Start a lesson from the left to see exercises here.</p>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:space-between">
+            <div class="small">Tip: Click the 🔊 icon to hear the sentence.</div>
+            <div>
+              <button class="btn ghost" id="ttsBtn">🔊 Hear</button>
+              <button class="btn" id="nextBtn" style="display:none">Next</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h4>Session Summary</h4>
+          <div id="summary" class="small">No exercises yet.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer style="text-align:center;padding:12px;color:#6b7280">Demo — Save file as <code>learnly.html</code> and open in browser</footer>
+
+  <script>
+    /**************************************************************************
+     * Learnly — mini Duolingo-like app
+     * Urdu comments for guidance. یہ code براہِ راست browser میں چل جائے گا۔
+     **************************************************************************/
+
+    // ===== Sample lessons data (آپ یہاں آسانی سے مزید lessons add کر سکتے ہیں) =====
+    // ہر lesson میں exercises کی array ہے؛ ہر exercise کا type 'mcq' یا 'write'
+    const LESSONS = [
+      {
+        id: 'l1',
+        title: 'Basics: Greetings',
+        subtitle: 'Hello, Good morning, How are you?',
+        exercises: [
+          {id:'e1',type:'mcq',prompt:'How do you say "سلام" in English?',audio:'Say "Hello"',choices:['Hello','Goodbye','Thanks'],answer:'Hello'},
+          {id:'e2',type:'mcq',prompt:'How do you greet in the morning?',audio:'Say "Good morning"',choices:['Good night','Good evening','Good morning'],answer:'Good morning'},
+          {id:'e3',type:'write',prompt:'Translate: "شکریہ" →',audio:'Say "Thank you"',answer:'Thank you'},
+          {id:'e4',type:'mcq',prompt:'How are you? — correct response',audio:'Say "How are you"',choices:['I am fine','See you','No thanks'],answer:'I am fine'},
+          {id:'e5',type:'write',prompt:'Type: "خدا حافظ" in English →',audio:'Say "Goodbye"',answer:'Goodbye'}
+        ]
+      },
+      {
+        id: 'l2',
+        title: 'Basics: Food',
+        subtitle: 'Food words and simple phrases',
+        exercises:[
+          {id:'e1',type:'mcq',prompt:'Which word is a fruit?',audio:'Say "Apple"',choices:['Apple','Car','Chair'],answer:'Apple'},
+          {id:'e2',type:'write',prompt:'Translate: "روٹی" →',audio:'Say "Bread"',answer:'Bread'},
+          {id:'e3',type:'mcq',prompt:'How do you ask for water?',audio:'Say "Can I have water?"',choices:['Where is water?','Can I have water?','I have water'],answer:'Can I have water?'},
+          {id:'e4',type:'mcq',prompt:'Which is a drink?',audio:'Say "Juice"',choices:['Juice','Plate','Fork'],answer:'Juice'},
+          {id:'e5',type:'write',prompt:'Type: "I am hungry" →',audio:'Say "I am hungry"',answer:'I am hungry'}
+        ]
+      },
+      {
+        id:'l3',
+        title:'Basics: Colors',
+        subtitle:'Red, Blue, Green',
+        exercises:[
+          {id:'e1',type:'mcq',prompt:'Which color is the sky?',audio:'Say "Blue"',choices:['Blue','Green','Yellow'],answer:'Blue'},
+          {id:'e2',type:'write',prompt:'Translate: "سبز" →',audio:'Say "Green"',answer:'Green'},
+          {id:'e3',type:'mcq',prompt:'Which one is red?',audio:'Say "Red"',choices:['Apple','Grass','Sky'],answer:'Apple'},
+          {id:'e4',type:'mcq',prompt:'Which color is a lemon?',audio:'Say "Yellow"',choices:['Blue','Yellow','Black'],answer:'Yellow'},
+          {id:'e5',type:'write',prompt:'Type: "I like green color" →',audio:'Say "I like green color"',answer:'I like green color'}
+        ]
+      }
+    ];
+
+    // ====== State and persistence ======
+    const state = {
+      coins: 0,
+      streak: 0,
+      scoreSession: 0,
+      completedExercises: JSON.parse(localStorage.getItem('learnly_completed')||'[]'), // array of exercise ids
+      mistakes: JSON.parse(localStorage.getItem('learnly_mistakes')||'[]'), // store wrong answers for review
+      currentLesson: null,
+      currentIndex: 0
+    };
+
+    function saveState(){
+      localStorage.setItem('learnly_completed', JSON.stringify(state.completedExercises));
+      localStorage.setItem('learnly_mistakes', JSON.stringify(state.mistakes));
+      localStorage.setItem('learnly_coins', JSON.stringify(state.coins));
+      localStorage.setItem('learnly_streak', JSON.stringify(state.streak));
+    }
+
+    // Load coins & streak if present
+    state.coins = Number(localStorage.getItem('learnly_coins')||0);
+    state.streak = Number(localStorage.getItem('learnly_streak')||0);
+
+    // ====== UI Elements ======
+    const lessonsList = document.getElementById('lessonsList');
+    const lessonTitle = document.getElementById('lessonTitle');
+    const lessonSubtitle = document.getElementById('lessonSubtitle');
+    const exerciseArea = document.getElementById('exerciseArea');
+    const scoreEl = document.getElementById('score');
+    const coinsEl = document.getElementById('coins');
+    const streakEl = document.getElementById('streak');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const summary = document.getElementById('summary');
+
+    // initial render
+    function renderLessons(){
+      lessonsList.innerHTML='';
+      LESSONS.forEach(lesson=>{
+        const div = document.createElement('div');
+        div.className='lesson';
+        div.innerHTML = `<div style="flex:1"><strong>${lesson.title}</strong><div class="small">${lesson.subtitle}</div></div><div class="small">${lesson.exercises.length} ex</div>`;
+        div.onclick = ()=>startLesson(lesson.id);
+        lessonsList.appendChild(div);
+      });
+      updateTopStats();
+      updateProgress();
+    }
+
+    function updateTopStats(){
+      coinsEl.textContent = 'Coins: '+state.coins;
+      streakEl.textContent = 'Streak: '+state.streak+' 🔥';
+      // level simple based on completed count
+      const completedCount = state.completedExercises.length;
+      const levelText = completedCount < 6 ? 'Beginner' : (completedCount < 15 ? 'Intermediate':'Advanced');
+      document.getElementById('level').textContent = 'Level: ' + levelText;
+      scoreEl.textContent = state.scoreSession;
+    }
+
+    function updateProgress(){
+      const totalEx = LESSONS.flatMap(l=>l.exercises).length;
+      const done = state.completedExercises.length;
+      const pct = Math.round(done / totalEx * 100);
+      progressFill.style.width = pct + '%';
+      progressText.textContent = `${done} / ${totalEx} completed (${pct}%)`;
+    }
+
+    // ===== Lesson flow =====
+    function startLesson(lessonId){
+      const lesson = LESSONS.find(l=>l.id===lessonId);
+      if(!lesson) return;
+      state.currentLesson = lesson;
+      state.currentIndex = 0;
+      state.scoreSession = 0;
+      lessonTitle.textContent = lesson.title;
+      lessonSubtitle.textContent = lesson.subtitle;
+      renderExercise(); // show first exercise
+      summary.textContent = `Lesson started: ${lesson.title}`;
+      updateTopStats();
+    }
+
+    function renderExercise(){
+      const lesson = state.currentLesson;
+      if(!lesson){ exerciseArea.innerHTML = '<p class="small">Choose a lesson to start.</p>'; return; }
+      const ex = lesson.exercises[state.currentIndex];
+      if(!ex) { endLesson(); return; }
+
+      // clear area
+      exerciseArea.innerHTML = '';
+      // prompt
+      const p = document.createElement('div');
+      p.innerHTML = `<div style="font-weight:700">${ex.prompt}</div>`;
+      exerciseArea.appendChild(p);
+
+      // audio button hint
+      const ttsBtn = document.getElementById('ttsBtn');
+      ttsBtn.onclick = ()=>speak(ex.audio || ex.prompt);
+
+      // exercise types
+      if(ex.type === 'mcq'){
+        const choicesDiv = document.createElement('div'); choicesDiv.className='choices';
+        ex.choices.forEach(choice=>{
+          const c = document.createElement('div'); c.className='choice'; c.textContent = choice;
+          c.onclick = ()=>handleAnswer(ex, choice, c);
+          choicesDiv.appendChild(c);
+        });
+        exerciseArea.appendChild(choicesDiv);
+      } else if(ex.type === 'write'){
+        const input = document.createElement('input'); input.placeholder = 'Type your answer...'; input.style.padding='10px'; input.style.borderRadius='8px'; input.style.border='1px solid #e6eef6'; input.style.width='100%';
+        exerciseArea.appendChild(input);
+        const submit = document.createElement('button'); submit.className='btn'; submit.textContent='Submit';
+        submit.onclick = ()=>handleAnswer(ex, input.value.trim(), input);
+        const ctrl = document.createElement('div'); ctrl.style.marginTop='8px'; ctrl.appendChild(submit);
+        exerciseArea.appendChild(ctrl);
+
+        input.addEventListener('keyup', (e)=>{ if(e.key === 'Enter') submit.click(); });
+      }
+
+      // progress within lesson
+      const progress = document.createElement('div'); progress.className='small'; progress.style.marginTop='8px';
+      progress.textContent = `Exercise ${state.currentIndex+1} / ${lesson.exercises.length}`;
+      exerciseArea.appendChild(progress);
+    }
+
+    // ===== Answer handling =====
+    function handleAnswer(ex, userAns, elementRef){
+      const correct = normalize(userAns) === normalize(ex.answer);
+      // visual feedback
+      if(elementRef && elementRef.classList){
+        if(correct) { elementRef.classList.add('correct'); }
+        else { elementRef.classList.add('wrong'); }
+      }
+      if(correct){
+        // reward
+        state.coins += 5;
+        state.scoreSession += 10;
+        // mark completed if not already
+        if(!state.completedExercises.includes(ex.id)) state.completedExercises.push(ex.id);
+        // increase streak
+        state.streak = Math.max(1, state.streak) + 1;
+        summary.textContent = 'Correct! +' + 5 + ' coins';
+      } else {
+        // record mistake for review
+        if(!state.mistakes.includes(JSON.stringify({lesson:state.currentLesson.id, exercise:ex.id, prompt:ex.prompt, answer:ex.answer}))){
+          state.mistakes.push(JSON.stringify({lesson:state.currentLesson.id, exercise:ex.id, prompt:ex.prompt, answer:ex.answer}));
+        }
+        // reduce streak
+        state.streak = Math.max(0, state.streak - 1);
+        summary.textContent = 'Incorrect. Correct: ' + ex.answer;
+      }
+      updateTopStats();
+      updateProgress();
+      saveState();
+
+      // small delay then next exercise
+      setTimeout(()=>{
+        // move next index or end
+        state.currentIndex++;
+        if(state.currentIndex >= state.currentLesson.exercises.length){
+          endLesson();
+        } else {
+          renderExercise();
+        }
+      }, 900);
+    }
+
+    function normalize(text){
+      if(!text && text !== 0) return '';
+      return String(text).toLowerCase().replace(/[^\w\s]/gi,'').trim();
+    }
+
+    // ===== End lesson =====
+    function endLesson(){
+      summary.textContent = `Lesson finished. Session score: ${state.scoreSession}, Coins total: ${state.coins}`;
+      // small reward for completing lesson
+      state.coins += 10;
+      saveState();
+      updateTopStats();
+      // reset current lesson
+      state.currentLesson = null;
+      state.currentIndex = 0;
+      lessonTitle.textContent = 'Completed';
+      lessonSubtitle.textContent = 'Choose another lesson';
+      exerciseArea.innerHTML = `<div class="center"><h3>Well done! 🎉</h3><p class="small">You finished the lesson.</p></div>`;
+    }
+
+    // ===== TTS (Web Speech API) =====
+    function speak(text){
+      if(!window.speechSynthesis) return alert('Speech API not supported in this browser.');
+      const utter = new SpeechSynthesisUtterance(text);
+      // try to pick an English voice
+      const voices = window.speechSynthesis.getVoices();
+      const en = voices.find(v => /en(-|_)?/i.test(v.lang) || /English/i.test(v.name));
+      if(en) utter.voice = en;
+      utter.rate = 0.95;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+
+    // ===== Review mistakes =====
+    document.getElementById('reviewBtn').onclick = ()=> {
+      if(state.mistakes.length === 0) { alert('No mistakes recorded yet.'); return; }
+      // show mistakes in simple list
+      const items = state.mistakes.map(x=>JSON.parse(x));
+      let message = 'Mistakes:\\n';
+      items.forEach(it=>{ const lesson = LESSONS.find(l=>l.id===it.lesson); message += `- ${lesson.title}: ${it.prompt} (Answer: ${it.answer})\\n`; });
+      alert(message);
+    };
+
+    // ===== Reset progress =====
+    document.getElementById('resetBtn').onclick = ()=> {
+      if(!confirm('Reset all progress?')) return;
+      state.completedExercises = [];
+      state.mistakes = [];
+      state.coins = 0;
+      state.streak = 0;
+      saveState();
+      renderLessons();
+      exerciseArea.innerHTML = '<p class="small">Progress reset. Choose a lesson to start.</p>';
+      summary.textContent = 'Progress reset.';
+    };
+
+    // ===== Random lesson button =====
+    document.getElementById('randomBtn').onclick = ()=> {
+      const r = LESSONS[Math.floor(Math.random()*LESSONS.length)];
+      startLesson(r.id);
+      // also play first audio if available
+      const ex = r.exercises[0];
+      if(ex && ex.audio) speak(ex.audio);
+    };
+
+    // search
+    document.getElementById('searchBtn').onclick = ()=>{
+      const term = document.getElementById('q').value.toLowerCase().trim();
+      if(!term) { renderLessons(); return; }
+      const results = LESSONS.filter(l => l.title.toLowerCase().includes(term) || l.subtitle.toLowerCase().includes(term) || l.exercises.some(e => e.prompt.toLowerCase().includes(term) || (e.answer && e.answer.toLowerCase().includes(term))));
+      if(results.length === 0){ alert('No matching lessons'); return; }
+      // open first matching lesson
+      startLesson(results[0].id);
+    };
+
+    // init
+    renderLessons();
+
+    // small UX: show stored coins and streak in top header on load
+    document.getElementById('coins').textContent = 'Coins: ' + state.coins;
+    document.getElementById('streak').textContent = 'Streak: ' + state.streak + ' 🔥';
+
+    // Accessibility note (voices may load asynchronously)
+    if(window.speechSynthesis) window.speechSynthesis.onvoiceschanged = ()=>{};
+  </script>
+</body>
+</html>

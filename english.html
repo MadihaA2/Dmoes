@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LingoMate — Learn English (Duolingo-like Demo)</title>
+  <style>
+    /* ------------------------
+       LingoMate — Single-file demo
+       Copy paste into lingomate.html and open in browser.
+       Styling: modern, responsive, mobile-first
+       ------------------------ */
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --muted:#64748b;
+      --primary:#0f172a;
+      --accent:#06b6d4;
+      --accent2:#10b981;
+      --danger:#ef4444;
+      --glass: rgba(255,255,255,0.6);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      background:linear-gradient(180deg,#e6eef9 0%, #f5f7fb 100%);color:var(--primary);
+      -webkit-font-smoothing:antialiased;
+    }
+
+    /* Header */
+    header{position:sticky;top:0;background:linear-gradient(90deg,var(--accent),var(--accent2));color:white;padding:12px;z-index:50;box-shadow:0 6px 18px rgba(2,6,23,0.08)}
+    .top{max-width:1100px;margin:0 auto;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:0 14px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:46px;height:46px;border-radius:10px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-weight:800}
+    .app-title{font-weight:800;font-size:18px}
+    .top-actions{display:flex;gap:8px;align-items:center}
+
+    /* Layout */
+    .wrap{max-width:1100px;margin:18px auto;padding:0 14px}
+    .grid{display:grid;grid-template-columns:320px 1fr;gap:18px}
+    .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 10px 30px rgba(2,6,23,0.06)}
+    .small{font-size:13px;color:var(--muted)}
+
+    /* Sidebar */
+    .profile{display:flex;gap:12px;align-items:center}
+    .avatar{width:64px;height:64px;border-radius:12px;background:linear-gradient(180deg,#fff,#f3f4f6);display:flex;align-items:center;justify-content:center;font-weight:700}
+    .stats{display:flex;flex-direction:column;gap:6px}
+    .stat-row{display:flex;gap:8px;align-items:center}
+    .pill{background:linear-gradient(90deg,var(--accent2),var(--accent));color:white;padding:6px 10px;border-radius:999px;font-weight:700}
+
+    /* Lessons list */
+    .skill{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;border:1px solid #eef2f7;cursor:pointer}
+    .skill.locked{opacity:.6}
+    .skill:hover{background:#f8fcfd}
+
+    /* Main content */
+    .main-top{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    .exercise-area{margin-top:12px;min-height:220px;display:flex;flex-direction:column;gap:12px}
+    .question{font-weight:700;font-size:18px}
+    .choices{display:flex;flex-direction:column;gap:8px}
+    .choice{padding:12px;border-radius:10px;border:1px solid #eef2f7;background:#fff;cursor:pointer}
+    .choice.correct{background:#ecfdf5;border-color:#10b981}
+    .choice.wrong{background:#fff1f2;border-color:#ef4444}
+    .input-answer{padding:10px;border-radius:10px;border:1px solid #e6eef6;width:100%}
+    .controls{display:flex;gap:8px;align-items:center}
+
+    /* Matching (drag/drop) */
+    .match-grid{display:flex;gap:16px;flex-wrap:wrap}
+    .match-col{flex:1;min-width:140px}
+    .match-item{padding:10px;border-radius:8px;border:1px dashed #e6eef6;background:#fff;margin-bottom:8px;cursor:grab}
+    .match-target{min-height:48px;padding:8px;border-radius:8px;border:1px dashed #cbd5e1;background:#fbfdff}
+
+    /* footer summary */
+    .summary{margin-top:12px;padding:10px;border-radius:8px;background:linear-gradient(90deg,#f0fdf4,#ecfeff);display:flex;justify-content:space-between;align-items:center}
+
+    /* modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.45);z-index:80}
+    .modal.open{display:flex}
+    .modal-card{width:760px;max-width:96%;background:var(--card);border-radius:12px;padding:18px}
+
+    /* responsive */
+    @media(max-width:980px){.grid{grid-template-columns:1fr}.top .top-actions{display:none}}
+    @media(max-width:480px){header .top{padding:8px}.logo{width:40px;height:40px}.app-title{font-size:16px}}
+    /* small helpers */
+    .center{text-align:center}
+    .muted{color:var(--muted)}
+    button.btn{background:var(--accent);color:white;padding:8px 10px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
+    button.ghost{background:transparent;border:1px solid #e6eef6;padding:8px 10px;border-radius:8px;cursor:pointer}
+    .badge{background:#f8fafc;padding:6px 10px;border-radius:999px;color:var(--muted);font-weight:700}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="top">
+    <div class="brand">
+      <div class="logo">LM</div>
+      <div>
+        <div class="app-title">LingoMate</div>
+        <div class="small">Learn English — Practice, earn XP, build streaks</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <div class="small">Signed in as: <strong id="topUser">Guest</strong></div>
+      <div class="pill" id="topXP">XP 0</div>
+      <div class="badge" id="topHearts">❤ 3</div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+    <!-- Sidebar -->
+    <aside>
+      <div class="card profile">
+        <div class="avatar" id="avatar">LM</div>
+        <div class="stats">
+          <div id="userName" style="font-weight:800">Guest</div>
+          <div class="small">Level <strong id="userLevel">1</strong> • Streak <strong id="userStreak">0</strong> days</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" id="btnSign">Sign In</button>
+            <button class="ghost" id="btnExport">Export</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Skills</strong><div class="small">Tap to practice</div></div>
+          <div class="small" id="skillProgress">0 / 0</div>
+        </div>
+        <div id="skillsList" style="margin-top:10px;display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Leaderboard</strong><div class="small">Top learners (local)</div></div>
+          <button class="ghost" id="btnClearData">Clear Data</button>
+        </div>
+        <div id="leaderboard" style="margin-top:10px" class="small"></div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <section>
+      <div class="card">
+        <div class="main-top">
+          <div>
+            <h2 id="lessonTitle">Welcome to LingoMate</h2>
+            <div class="small" id="lessonSub">Choose a skill from the left to begin</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="small">Coins: <strong id="coins">0</strong></div>
+            <div class="small">XP: <strong id="xp">0</strong></div>
+            <div class="small">Hearts: <strong id="hearts">3</strong></div>
+          </div>
+        </div>
+
+        <hr style="margin:12px 0;border:none;border-top:1px solid #eef2f7" />
+
+        <div id="exerciseArea" class="exercise-area">
+          <div class="center small">No active exercise. Select a skill to practice.</div>
+        </div>
+
+        <div class="summary" id="sessionSummary" style="display:none">
+          <div>Session: <span id="sessionInfo">0 correct • 0 wrong</span></div>
+          <div><button class="btn" id="endSessionBtn">End Session</button></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h4>Review Mistakes</h4>
+        <div id="mistakesArea" class="small">No mistakes yet.</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- SIGN IN / PROFILE modal -->
+<div id="modal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <h3 id="modalTitle">Sign In / Create Account</h3>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="inputName" placeholder="Your name" style="flex:1;padding:10px;border-radius:8px;border:1px solid #eef2f7" />
+      <input id="inputInitials" placeholder="Initials (2 letters)" style="width:120px;padding:10px;border-radius:8px;border:1px solid #eef2f7" maxlength="2" />
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" id="saveProfile">Save</button>
+      <button class="ghost" id="closeModal">Cancel</button>
+    </div>
+    <div style="margin-top:12px" class="small">Progress saved locally in your browser.</div>
+  </div>
+</div>
+
+<script>
+/*
+  LingoMate — Duolingo-like demo
+  - Single-file: copy → lingomate.html → open in browser
+  - Uses localStorage for user data, progress, leaderboard
+  - TTS uses Web Speech API
+  - Urdu comments and English explanations mixed
+*/
+
+/* =========================
+   Sample Skills & Exercises
+   Each skill has multiple exercises of type:
+      - mcq: multiple choice {choices:[], answer}
+      - write: user types text, compare normalized
+      - match: pairs for drag/drop (we will simulate with click-matching)
+   ========================= */
+const SKILLS = [
+  {
+    id:'s_basics',
+    title:'Basics: Greetings',
+    subtitle:'Hello, Good morning, Thank you',
+    exercises:[
+      { id:'b1', type:'mcq', prompt:'How do you say "سلام" in English?', audio:'Hello', choices:['Hello','Bye','Thanks'], answer:'Hello' },
+      { id:'b2', type:'mcq', prompt:'Good morning — when to say it?', audio:'Good morning', choices:['At night','In the morning','When leaving'], answer:'In the morning' },
+      { id:'b3', type:'write', prompt:'Translate: "شکریہ" →', audio:'Thank you', answer:'Thank you' },
+      { id:'b4', type:'match', prompt:'Match greeting to response', pairs:[['How are you?','I am fine'],['Nice to meet you','Nice to meet you too'],['Hello','Hi']] }
+    ]
+  },
+  {
+    id:'s_food',
+    title:'Food & Drink',
+    subtitle:'Apple, bread, water, juice',
+    exercises:[
+      { id:'f1', type:'mcq', prompt:'Which is a fruit?', audio:'Apple', choices:['Apple','Car','Chair'], answer:'Apple' },
+      { id:'f2', type:'write', prompt:'Translate: "روٹی" →', audio:'Bread', answer:'Bread' },
+      { id:'f3', type:'mcq', prompt:'How to ask for water politely?', audio:'Can I have water?', choices:['Give me water','Can I have water?','Water please'], answer:'Can I have water?' },
+      { id:'f4', type:'match', prompt:'Match food to category', pairs:[['Apple','Fruit'],['Carrot','Vegetable'],['Bread','Grain']] }
+    ]
+  },
+  {
+    id:'s_colors',
+    title:'Colors',
+    subtitle:'Red, Blue, Green',
+    exercises:[
+      { id:'c1', type:'mcq', prompt:'What color is the sky?', audio:'Blue', choices:['Blue','Red','Green'], answer:'Blue' },
+      { id:'c2', type:'write', prompt:'Translate: "سبز" →', audio:'Green', answer:'Green' },
+      { id:'c3', type:'mcq', prompt:'Which color is a banana?', audio:'Yellow', choices:['Blue','Yellow','Black'], answer:'Yellow' },
+      { id:'c4', type:'match', prompt:'Match color with object', pairs:[['Sky','Blue'],['Grass','Green'],['Apple','Red']] }
+    ]
+  }
+];
+
+/* =========================
+   App State: stored in localStorage per user
+   Structure:
+   users: {
+     current: username,
+     profiles: {
+       username: {name, initials, xp, coins, streak, hearts, completed: [exerciseIds], mistakes: [exercise objects]}
+     },
+     leaderboard: [{name,xp}]
+   }
+   ========================= */
+const STORAGE_KEY = 'lingomate_v1';
+let APP = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+if(!APP.users) APP.users = { current: null, profiles: {}, leaderboard: [] };
+
+/* Helper to save */
+function saveApp(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(APP)); updateLeaderboard(); }
+
+/* Current user convenience */
+function currentProfile(){
+  const cur = APP.users.current;
+  if(!cur) return null;
+  return APP.users.profiles[cur] || null;
+}
+
+/* Default: create Guest profile if not signed in */
+if(!APP.users.current){
+  const guest = 'Guest';
+  if(!APP.users.profiles[guest]) {
+    APP.users.profiles[guest] = { name:'Guest', initials:'GM', xp:0, coins:0, streak:0, hearts:3, completed:[], mistakes:[] };
+    APP.users.current = guest;
+    saveApp();
+  } else {
+    APP.users.current = guest;
+  }
+}
+
+/* ========= UI nodes ========= */
+const topUser = document.getElementById('topUser');
+const topXP = document.getElementById('topXP');
+const topHearts = document.getElementById('topHearts');
+const avatar = document.getElementById('avatar');
+const userName = document.getElementById('userName');
+const userLevel = document.getElementById('userLevel');
+const userStreak = document.getElementById('userStreak');
+const skillsList = document.getElementById('skillsList');
+const lessonTitle = document.getElementById('lessonTitle');
+const lessonSub = document.getElementById('lessonSub');
+const exerciseArea = document.getElementById('exerciseArea');
+const coinsEl = document.getElementById('coins');
+const xpEl = document.getElementById('xp');
+const heartsEl = document.getElementById('hearts');
+const sessionSummary = document.getElementById('sessionSummary');
+const sessionInfo = document.getElementById('sessionInfo');
+const mistakesArea = document.getElementById('mistakesArea');
+const leaderboardEl = document.getElementById('leaderboard');
+
+/* Modal nodes */
+const modal = document.getElementById('modal');
+const inputName = document.getElementById('inputName');
+const inputInitials = document.getElementById('inputInitials');
+const saveProfileBtn = document.getElementById('saveProfile');
+const closeModalBtn = document.getElementById('closeModal');
+
+/* Buttons */
+document.getElementById('btnSign').onclick = openSignModal;
+document.getElementById('btnExport').onclick = exportProfile;
+document.getElementById('btnClearData').onclick = clearAllData;
+
+/* Exercise flow state */
+let activeSkill = null;
+let currentExerciseIndex = 0;
+let sessionStats = { correct:0, wrong:0, startTime:0 };
+
+/* Initialize UI from state */
+renderProfile();
+renderSkills();
+renderLeaderboard();
+showWelcome();
+
+/* =========================
+   Profile & Auth
+   ========================= */
+function openSignModal(){
+  modal.classList.add('open'); modal.setAttribute('aria-hidden','false');
+  const prof = currentProfile();
+  inputName.value = prof ? prof.name : '';
+  inputInitials.value = prof ? (prof.initials || '') : '';
+}
+closeModalBtn.onclick = ()=>{ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); };
+
+saveProfileBtn.onclick = ()=>{
+  const name = inputName.value.trim() || 'User';
+  let initials = (inputInitials.value.trim() || name.slice(0,2)).toUpperCase();
+  initials = initials.slice(0,2);
+  // create profile with unique username key
+  let username = name;
+  let i=1;
+  while(APP.users.profiles[username] && APP.users.current !== username){
+    username = name + (i++); // ensure unique key
+  }
+  if(!APP.users.profiles[username]) {
+    APP.users.profiles[username] = { name, initials, xp:0, coins:0, streak:0, hearts:3, completed:[], mistakes:[] };
+  }
+  APP.users.current = username;
+  saveApp();
+  modal.classList.remove('open'); modal.setAttribute('aria-hidden','true');
+  renderProfile();
+  renderLeaderboard();
+};
+
+/* export profile JSON */
+function exportProfile(){
+  const prof = currentProfile();
+  if(!prof) return alert('No profile active.');
+  const data = { username: APP.users.current, profile: prof };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${APP.users.current}_lingomate.json`; a.click();
+}
+
+/* clear data (danger) */
+function clearAllData(){
+  if(!confirm('Clear all app data (including leaderboard)?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+/* =========================
+   Render profile UI
+   ========================= */
+function renderProfile(){
+  const prof = currentProfile();
+  topUser.textContent = prof ? prof.name : 'Guest';
+  topXP.textContent = 'XP ' + (prof ? prof.xp : 0);
+  topHearts.textContent = '❤ ' + (prof ? prof.hearts : 0);
+  avatar.textContent = prof ? (prof.initials || prof.name[0]) : 'LM';
+  userName.textContent = prof ? prof.name : 'Guest';
+  userLevel.textContent = levelFromXp(prof ? prof.xp : 0);
+  userStreak.textContent = prof ? prof.streak : 0;
+  coinsEl.textContent = prof ? prof.coins : 0;
+  xpEl.textContent = prof ? prof.xp : 0;
+  heartsEl.textContent = prof ? prof.hearts : 0;
+  // mistakes
+  renderMistakes();
+}
+
+/* compute simple level from xp */
+function levelFromXp(xp){
+  if(xp < 100) return 1;
+  if(xp < 300) return 2;
+  if(xp < 700) return 3;
+  if(xp < 1400) return 4;
+  return 5;
+}
+
+/* =========================
+   Skills rendering
+   ========================= */
+function renderSkills(){
+  skillsList.innerHTML = '';
+  SKILLS.forEach(skill=>{
+    const div = document.createElement('div'); div.className = 'skill';
+    div.innerHTML = `<div style="flex:1"><strong>${skill.title}</strong><div class="small">${skill.subtitle}</div></div><div class="small">${skill.exercises.length} ex</div>`;
+    div.onclick = ()=>startSkill(skill.id);
+    skillsList.appendChild(div);
+  });
+  // skill progress summary
+  const totalEx = SKILLS.flatMap(s=>s.exercises).length;
+  const done = currentProfile() ? currentProfile().completed.length : 0;
+  document.getElementById('skillProgress').textContent = `${done} / ${totalEx}`;
+}
+
+/* =========================
+   Start a skill (practice session)
+   ========================= */
+function startSkill(skillId){
+  const skill = SKILLS.find(s=>s.id === skillId);
+  if(!skill) return;
+  activeSkill = skill;
+  currentExerciseIndex = 0;
+  sessionStats = { correct:0, wrong:0, startTime:Date.now() };
+  lessonTitle.textContent = skill.title;
+  lessonSub.textContent = skill.subtitle;
+  sessionSummary.style.display = 'flex';
+  renderExercise();
+}
+
+/* =========================
+   Render a single exercise
+   ========================= */
+function renderExercise(){
+  exerciseArea.innerHTML = '';
+  if(!activeSkill) { exerciseArea.innerHTML = '<div class="center small">Choose a skill to start practicing.</div>'; return; }
+  const ex = activeSkill.exercises[currentExerciseIndex];
+  if(!ex){
+    // done with skill
+    finishSession();
+    return;
+  }
+
+  // Show prompt and controls
+  const prompt = document.createElement('div'); prompt.className = 'question'; prompt.textContent = ex.prompt;
+  exerciseArea.appendChild(prompt);
+
+  // TTS button
+  const ttsBtn = document.createElement('button'); ttsBtn.className='ghost'; ttsBtn.textContent='🔊 Hear';
+  ttsBtn.onclick = ()=>speak(ex.audio || ex.prompt);
+  exerciseArea.appendChild(ttsBtn);
+
+  // exercise types
+  if(ex.type === 'mcq'){
+    const choices = document.createElement('div'); choices.className='choices';
+    // shuffle choices copy
+    const shuffled = shuffleArray([...(ex.choices || [])]);
+    shuffled.forEach(choice=>{
+      const c = document.createElement('div'); c.className='choice'; c.textContent = choice;
+      c.onclick = ()=>handleAnswer(ex, choice, c);
+      choices.appendChild(c);
+    });
+    exerciseArea.appendChild(choices);
+  } else if(ex.type === 'write'){
+    const input = document.createElement('input'); input.className='input-answer'; input.placeholder='Type your answer here...';
+    const submit = document.createElement('button'); submit.className='btn'; submit.textContent='Submit';
+    submit.onclick = ()=>handleAnswer(ex, input.value.trim(), input);
+    // press enter
+    input.addEventListener('keyup', (e)=>{ if(e.key === 'Enter') submit.click(); });
+    exerciseArea.appendChild(input);
+    exerciseArea.appendChild(submit);
+  } else if(ex.type === 'match'){
+    // simple click-to-match: left items and right targets
+    const pairs = ex.pairs.map(p=>p.slice()); // copy
+    const left = shuffleArray(pairs.map(p=>p[0]));
+    const right = shuffleArray(pairs.map(p=>p[1]));
+    const matchGrid = document.createElement('div'); matchGrid.className='match-grid';
+
+    const leftCol = document.createElement('div'); leftCol.className='match-col';
+    left.forEach(item=>{
+      const it = document.createElement('div'); it.className='match-item'; it.textContent = item;
+      it.dataset.value = item;
+      leftCol.appendChild(it);
+    });
+
+    const rightCol = document.createElement('div'); rightCol.className='match-col';
+    right.forEach(item=>{
+      const it = document.createElement('div'); it.className='match-item'; it.textContent = item;
+      it.dataset.value = item;
+      rightCol.appendChild(it);
+    });
+
+    // simple matching: click left then click right — check pair exists
+    let selectedLeft = null;
+    leftCol.addEventListener('click', (ev)=>{
+      const target = ev.target.closest('.match-item'); if(!target) return;
+      // mark selected
+      selectedLeft = target.dataset.value;
+      // highlight
+      leftCol.querySelectorAll('.match-item').forEach(n=>n.style.borderColor = '#e6eef6');
+      target.style.borderColor = '#06b6d4';
+    });
+    rightCol.addEventListener('click', (ev)=>{
+      const target = ev.target.closest('.match-item'); if(!target || !selectedLeft) return;
+      const rightVal = target.dataset.value;
+      // check if pair exists
+      const ok = pairs.some(p=>p[0] === selectedLeft && p[1] === rightVal);
+      // visual feedback
+      target.style.borderColor = ok ? '#10b981' : '#ef4444';
+      // handle result as single micro-answer: if correct, mark one correct, else wrong
+      handleAnswer(ex, ok ? `${selectedLeft}=>${rightVal}` : 'WRONG', target);
+      // reset selection
+      selectedLeft = null;
+      leftCol.querySelectorAll('.match-item').forEach(n=>n.style.borderColor = '#e6eef6');
+    });
+
+    matchGrid.appendChild(leftCol);
+    matchGrid.appendChild(rightCol);
+    exerciseArea.appendChild(matchGrid);
+  }
+
+  // show progress within skill
+  const progressText = document.createElement('div'); progressText.className='small'; progressText.textContent = `Exercise ${currentExerciseIndex+1} of ${activeSkill.exercises.length}`;
+  exerciseArea.appendChild(progressText);
+}
+
+/* =========================
+   Handle Answer & Feedback
+   ========================= */
+function handleAnswer(ex, userAns, elementRef){
+  const prof = currentProfile();
+  if(!prof) return;
+  let correct = false;
+  if(ex.type === 'mcq'){
+    correct = normalize(userAns) === normalize(ex.answer);
+  } else if(ex.type === 'write'){
+    correct = normalize(userAns) === normalize(ex.answer);
+  } else if(ex.type === 'match'){
+    // in match we pass 'left=>right' string for correct during click handling (see above)
+    if(typeof userAns === 'string' && userAns.includes('=>')){
+      correct = true; // caller already determined ok
+    } else {
+      correct = false;
+    }
+  }
+
+  // visual feedback
+  if(elementRef && elementRef.classList){
+    if(correct){ elementRef.classList.add('correct'); } else { elementRef.classList.add('wrong'); }
+  }
+
+  // update state
+  if(correct){
+    sessionStats.correct++;
+    prof.xp = (prof.xp || 0) + 10;
+    prof.coins = (prof.coins || 0) + 3;
+    // add to completed if not present
+    if(!prof.completed.includes(ex.id)){
+      prof.completed.push(ex.id);
+    }
+  } else {
+    sessionStats.wrong++;
+    prof.hearts = Math.max(0, (prof.hearts || 0) - 1);
+    // record mistake as object
+    prof.mistakes.push({ skillId: activeSkill.id, exId: ex.id, prompt: ex.prompt, answer: ex.answer, time: Date.now() });
+  }
+  // small rewards/penalties for streak
+  if(prof.hearts === 0){
+    // if out of hearts, end session early
+    finishSession('out_of_hearts');
+  } else {
+    // continue after short delay
+    setTimeout(()=>{
+      currentExerciseIndex++;
+      if(currentExerciseIndex >= activeSkill.exercises.length){
+        finishSession();
+      } else {
+        renderProfile();
+        renderExercise();
+      }
+    }, 700);
+  }
+  saveApp();
+  renderProfile();
+  updateSessionSummary();
+}
+
+/* update session summary UI */
+function updateSessionSummary(){
+  sessionSummary.style.display = 'flex';
+  sessionInfo.textContent = `${sessionStats.correct} correct • ${sessionStats.wrong} wrong`;
+}
+
+/* finish session */
+function finishSession(reason){
+  const prof = currentProfile();
+  // reward extra coins for completion
+  if(reason !== 'out_of_hearts'){
+    prof.coins += 5;
+    // increment streak
+    prof.streak = (prof.streak || 0) + 1;
+  } else {
+    // losing hearts reduces streak
+    prof.streak = Math.max(0, (prof.streak || 0) - 1);
+  }
+  saveApp();
+  renderProfile();
+  exerciseArea.innerHTML = `<div class="center"><h3>Session complete</h3><div class="small">You earned ${sessionStats.correct * 10} XP and ${sessionStats.correct * 3 + 5} coins</div><div style="margin-top:8px"><button class="btn" onclick="startSkill('${activeSkill.id}')">Retry</button> <button class="ghost" onclick="stopSkill()">Done</button></div></div>`;
+  // update leaderboard
+  updateLeaderboard();
+}
+
+/* stop skill without retry */
+function stopSkill(){
+  activeSkill = null;
+  lessonTitle.textContent = 'Ready';
+  lessonSub.textContent = 'Choose a skill to practice';
+  sessionSummary.style.display = 'none';
+  exerciseArea.innerHTML = '<div class="center small">No active exercise. Select a skill to practice.</div>';
+}
+
+/* =========================
+   TTS function
+   ========================= */
+function speak(text){
+  if(!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  // pick English voice if possible
+  const voices = window.speechSynthesis.getVoices();
+  const en = voices.find(v => /en(-|_)?/i.test(v.lang) || /English/i.test(v.name));
+  if(en) u.voice = en;
+  u.rate = 0.95;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
+/* =========================
+   Mistakes view
+   ========================= */
+function renderMistakes(){
+  const prof = currentProfile();
+  mistakesArea.innerHTML = '';
+  if(!prof || !prof.mistakes || prof.mistakes.length === 0){
+    mistakesArea.textContent = 'No mistakes recorded yet.';
+    return;
+  }
+  const list = prof.mistakes.slice(-10).reverse();
+  list.forEach(m=>{
+    const div = document.createElement('div'); div.className='small'; div.style.marginBottom='8px';
+    const skill = SKILLS.find(s=>s.id === m.skillId);
+    div.innerHTML = `<strong>${skill ? skill.title : ''}</strong>: ${m.prompt} — <em>Ans: ${m.answer}</em>`;
+    mistakesArea.appendChild(div);
+  });
+}
+
+/* =========================
+   Leaderboard (local)
+   ========================= */
+function updateLeaderboard(){
+  // create array of {name,xp}
+  const profiles = Object.entries(APP.users.profiles).map(([k,v])=>({username:k, name:v.name, xp:v.xp || 0}));
+  profiles.sort((a,b)=>b.xp - a.xp);
+  // top 5 in APP.users.leaderboard for persistence
+  APP.users.leaderboard = profiles.slice(0, 10);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(APP));
+  renderLeaderboard();
+}
+
+function renderLeaderboard(){
+  leaderboardEl.innerHTML = '';
+  const lb = APP.users.leaderboard || [];
+  if(lb.length === 0){ leaderboardEl.textContent = 'No learners yet.'; return; }
+  lb.forEach((p, idx)=>{
+    const div = document.createElement('div'); div.className='small'; div.style.marginBottom='6px';
+    div.innerHTML = `${idx+1}. <strong>${p.name}</strong> — XP ${p.xp}`;
+    leaderboardEl.appendChild(div);
+  });
+}
+
+/* =========================
+   Utilities
+   ========================= */
+function normalize(s){ return String(s || '').toLowerCase().replace(/[^\w\s]/gi,'').trim(); }
+function shuffleArray(a){ return a.map(v=>({v, r:Math.random()})).sort((x,y)=>x.r-y.r).map(x=>x.v); }
+
+/* =========================
+   Small welcome / fallback UI
+   ========================= */
+function showWelcome(){
+  lessonTitle.textContent = 'Welcome to LingoMate';
+  lessonSub.textContent = 'Choose a skill to begin — practice a few minutes daily to build streaks!';
+  exerciseArea.innerHTML = `<div class="center"><h3>Start Learning</h3><p class="small">Click a skill on the left to start exercises. Use the 🔊 button to hear phrases.</p></div>`;
+  renderProfile();
+}
+
+/* =========================
+   Buttons and quick actions
+   ========================= */
+document.getElementById('endSessionBtn').onclick = ()=>{
+  // end session and reset
+  stopSkill();
+};
+
+document.getElementById('btnClearData').addEventListener('click', ()=>{
+  if(confirm('Clear all app storage? This will remove all profiles and progress.')) { localStorage.removeItem(STORAGE_KEY); location.reload(); }
+});
+
+/* =========================
+   Initial leaderboard
+   ========================= */
+if(!APP.users.leaderboard || APP.users.leaderboard.length === 0){
+  // seed with current user
+  const prof = currentProfile();
+  if(prof){
+    APP.users.leaderboard = [{username:APP.users.current, name:prof.name, xp:prof.xp}];
+    saveApp();
+  }
+}
+renderLeaderboard();
+renderSkills();
+
+/* =========================
+   Save app data on beforeunload
+   ========================= */
+window.addEventListener('beforeunload', ()=>{ saveApp(); });
+
+</script>
+</body>
+</html>
